@@ -1,0 +1,103 @@
+---
+title: "IEFCIC R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Éste es un [R Markdown](http://rmarkdown.rstudio.com) Notebook. Cuando ejecutes el código contenido, los resultados aparecerán debajo del código.
+
+###########################################################################################################
+Los archivos que se van a usar fueron descargados de [datos.gov.co](http://www.datos.gov.co). Luego fueron extraídos de forma local en formato .txt y .sav.
+
+En el [vídeo](https://www.youtube.com/watch?v=6ULCP7NsITY) se explica paso a paso la obtención de datos
+
+1. Cargando las librerías requeridas
+```{r}
+library(haven)
+df <- read_sav("./IEFIC_2015.sav")
+head(df)
+```
+
+2. Preparando el set de datos: tratando los NAs, tipo de estructura de datos.
+```{r}
+df[df == "NaN"] <- "NA" ## Convertir todos los NaN a NA
+library(data.table) ## Librería requerida
+dt <- data.table(df) # pasando del formato data frame a data table
+```
+
+3. Extrayendo un subgrupo de variables: Nos vamos a quedar solamente con las que tiene que ver con productos financieros. Creamos una variable "dfinanc" que conserve las variables de la 195 a la 201, que en el vídeo se explica a que corresponden.
+
+```{r}
+dfinanc <- dt[, c(195:201), with = FALSE] ## seleccionando lo que tiene que ver con productos financieros
+dfinanc <- sapply(dfinanc, FUN = function(x) {x <- as.numeric(x)}) ## pasando character a numeric
+dfinanc <- as.data.table(dfinanc) ## convirtiendo de tipo matrix a datatable
+summary(dfinanc) ## estadísticas básicas de las variables
+```
+
+4. Entrando en el detalle de una de las variables mostradas en el resumen: 
+
+4.1. Cuántos no perciben ingresos por el instrumento financiero o no tienen
+```{r}
+nrow(dfinanc[is.na(P2966)])
+```
+
+4.2. Cuantos perciben algo por el instrumento financiero o lo tienen
+```{r}
+nrow(dfinanc[!is.na(P2966)])
+```
+
+4.3. Porcentaje de los que perciben o tienen
+```{r}
+nrow(dfinanc[!is.na(P2966)]) / nrow(dfinanc[is.na(P2966)])
+```
+
+5. Visualización de los datos: El analisis de los datos puede agilizarse gracias a la visualización de los mismos. Para ellos vamos a basarnos en ggplot2, una libreria de R CRAN y tendremos que hacer algunos arreglos de forma.
+
+```{r}
+library(ggplot2) ## cargamos la libreria de graficos
+dfinanc2 <- dfinanc ## haciendo copia de los datos
+dfinanc2[is.na(dfinanc2)] <- 0 ## convirtiendo a cero todos los NAs, para visualizacion
+```
+
+Para poder la gráfica de la variable que muestra ingresos por productos financieros
+```{r}
+ggplot(data = dfinanc2, aes(x = seq(1:nrow(dfinanc2)), y = log(P2966))) + geom_point()
+```
+
+Y veamos ahora el gráfico de la distribución de esta variable
+```{r}
+ggplot(data = dfinanc2, aes(x = log(P2966))) + geom_density()
+```
+
+6. Analisis de correlaciones: "En probabilidad y estadística, la correlación indica la fuerza y la dirección de una relación lineal y proporcionalidad entre dos variables estadísticas. Se considera que dos variables cuantitativas están correlacionadas cuando los valores de una de ellas varían sistemáticamente con respecto a los valores homónimos de la otra: si tenemos dos variables (A y B) existe correlación disminuir los valores de A lo hacen también los de B y viceversa. La correlación entre dos variables no implica, por sí misma, ninguna relación de causalidad" ver ([Wikipedia](https://es.wikipedia.org/wiki/Correlaci%C3%B3n)) La última parte sobre la no causalidad es muy muy importante.
+
+6.1. Lo primero es graficar cada variable contra las demás para apreciar en cada cuadro las correlaciones
+
+```{r, cache=TRUE}
+pairs(dfinanc2)
+```
+
+6.2. Esto mismo podemos verlo en números, donde los valores cercanos al 1.0 indican una correlación positiva (cuando los valores de una variable aumenta los de la otra también) y los cercanos a -1.0 indican una correlación negativa (cuando los valores de una variable aumentan los de la otra disminuyen -y viceversa-)
+
+```{r}
+cor(dfinanc2)
+```
+
+6.3. Hagámoslo más amable con la librería corrplot:
+
+```{r}
+library(corrplot)
+corrplot(cor(dfinanc2))
+corrplot(cor(dfinanc2), method = "number")
+corrplot.mixed(cor(dfinanc2), lower="number", upper="circle")
+```
+
+7. Finalmente, revisemos en detalle las correlaciones señaladas:
+
+```{r}
+ggplot(data = dfinanc2, aes(x = P2971, y = P2972)) + geom_point()
+ggplot(data = dfinanc2, aes(x = P2967, y = P2970)) + geom_point()
+```
+
+
