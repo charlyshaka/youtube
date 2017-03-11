@@ -1,6 +1,7 @@
 ## Los archivos que se van a usar fueron descargados de www.datos.gov.co
 ## Luego fueron extraidos de forma local en formato .txt y .sav
-
+## En el video https://www.youtube.com/watch?v=6ULCP7NsITY se explica paso a paso
+## la obtención de datos
 ## librerias requeridas
 library(haven)
 archivo <- file.choose() ## seleccionar archivo a cargar
