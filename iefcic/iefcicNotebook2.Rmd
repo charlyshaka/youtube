@@ -1,0 +1,92 @@
+---
+title: "IEFCIC R Notebook 2"
+output: html_notebook
+---
+
+Éste es un [R Markdown](http://rmarkdown.rstudio.com) Notebook. Cuando ejecutes el código contenido, los resultados aparecerán debajo del código.
+
+Los archivos que se van a usar fueron descargados de [datos.gov.co](http://www.datos.gov.co). Luego fueron extraídos de forma local en formato .txt y .sav.
+
+En el [vídeo](https://www.youtube.com/watch?v=6ULCP7NsITY) se explica paso a paso la obtención de datos, y en [este vídeo](https://www.youtube.com/watch?v=5wCkW6y36DA&t=8s) se muestran algunas ideas de análisis exploratorio básico.
+
+1. Cargando el set de datos (que puede descargar también desde [aquí](https://github.com/oscarvilla/youtube/tree/master/iefcic)) Y revisamos el encabezado solo para estar seguros.
+```{r, cache=TRUE}
+library(haven)
+setwd("./")
+df <- read_sav("./IEFIC_2015.sav")
+head(df)
+```
+
+2. Extrayendo un subgrupo de variables: Nos vamos a quedar solamente con las que son de nuestro interés. Creamos una variable "dfinanc" que conserve las variables.
+
+```{r, warning=FALSE, cache=TRUE}
+dingresos <- df[, c(5:6)]
+dinstfinan <- df[, c(12:15)]
+delectrodom <- df[, c(43:54)]
+dgastoshog <- df[, c(55:68)]
+ddistinghog <- df[, c(69:95)]
+dmaqyequ <- df[, c(115:118)]
+dtarjcredito <- df[, c(129:179)]
+dendeud <- df[, c(203:209)]
+dnegocio <- df[, c(210:214)]
+dcrednegocio <- df[, c(215:221)]
+dcredvehic <- df[, c(224:232)]
+dsex <- df[, 233]
+dcreditoytarj <- df[, c(234:255)]
+```
+
+3. Limpiando el set de datos a usar, que es el de endeudamiento. Vamos a tratar de ver si hay un patrón identificable asociado a altas deudas.
+```{r, message=FALSE, cache=TRUE}
+## Creamos la función que ajusta el formato del set de datos
+limpia <- function(x){
+        x <- sapply(x, FUN = function(x) {x <- as.numeric(x)})
+        x[x == "NaN"] <- 0 ## Convertir todos los NaN a cero
+        return(x)
+}
+dt <- cbind(dcreditoytarj[, 6:22], dendeud[, 4:6])
+dt <- dt[, c(2:20, 1)] #Dejamos de última la variable dependiente
+dt2 <- as.data.frame(limpia(dt))
+```
+
+
+4. Visualización de los datos: El analisis de los datos puede agilizarse gracias a la visualización de los mismos.
+4.1. Primero veamos todas las correlaciones:
+
+```{r}
+library(corrplot)
+corrplot(cor(dt2), method = "number")
+```
+
+Encontramos que las correlaciones que se presentan son entre usar las tarjetas de crédito para pagar compras y usarlas para pagar cuotas de un crédito, utilizar las compraventas como medio y hacer abonos a esta ... este son el tipo de correlaciones apreciables.
+
+4.2. Ahora revisemos las correlaciones de cada variable con la variable de salida, dependiente o "y"
+
+```{r}
+cor(dt2)[1:19, 20]
+```
+
+O visualmente
+
+```{r}
+library(qgraph)
+qgraph(cor(dt2), shape="circle", posCol="darkgreen", negCol="darkred", layout="groups", vsize=8)
+```
+
+No hay correlaciones significativas.
+
+4.3. Aventuremos la construcción de un modelo con regresiones lineales
+```{r}
+model <- lm(P352_4 ~., data = dt2)
+summary(model)
+```
+
+Entonces intentemos un nuevo modelo con las variables que se mostraron significativas, las marcadas con asteriscos
+
+```{r}
+dt2$P353 <- as.factor(dt2$P353)
+dt2$P377 <- as.factor(dt2$P377)
+dt2$P379 <- as.factor(dt2$P379)
+
+model <- lm(P352_4 ~ P2978 + P353 + P377 + P379, data = dt2)
+summary(model)
+```
