@@ -17,7 +17,7 @@ df <- read_sav("./IEFIC_2015.sav")
 head(df)
 ```
 
-2. Extrayendo un subgrupo de variables: Nos vamos a quedar solamente con las que son de nuestro interés. Creamos una variable "dfinanc" que conserve las variables.
+2. Extrayendo las variables por subgrupos.Así podremos explorarlas para quedarnos en cada caso solamente con las que son de nuestro interés.
 
 ```{r, warning=FALSE, cache=TRUE}
 dingresos <- df[, c(5:6)]
@@ -26,7 +26,7 @@ delectrodom <- df[, c(43:54)]
 dgastoshog <- df[, c(55:68)]
 ddistinghog <- df[, c(69:95)]
 dmaqyequ <- df[, c(115:118)]
-dtarjcredito <- df[, c(129:179)]
+ddeudanohipotecaria <- df[, c(129:179)]
 dendeud <- df[, c(203:209)]
 dnegocio <- df[, c(210:214)]
 dcrednegocio <- df[, c(215:221)]
@@ -35,58 +35,67 @@ dsex <- df[, 233]
 dcreditoytarj <- df[, c(234:255)]
 ```
 
-3. Limpiando el set de datos a usar, que es el de endeudamiento. Vamos a tratar de ver si hay un patrón identificable asociado a altas deudas.
+3. Vamos a enfocarnos en el apartado "F. Deudas no hipotecarias". Tenemos que limpiar el set de datos: convertimos todos los NaN a ceros (0).
 ```{r, message=FALSE, cache=TRUE}
 ## Creamos la función que ajusta el formato del set de datos
 limpia <- function(x){
         x <- sapply(x, FUN = function(x) {x <- as.numeric(x)})
         x[x == "NaN"] <- 0 ## Convertir todos los NaN a cero
+        x[is.na(x)] <- 0
         return(x)
 }
-dt <- cbind(dcreditoytarj[, 6:22], dendeud[, 4:6])
-dt <- dt[, c(2:20, 1)] #Dejamos de última la variable dependiente
-dt2 <- as.data.frame(limpia(dt))
+dt <- as.data.frame(limpia(ddeudanohipotecaria))
+dt <- dt[, -c(2, 9, 18, 25, 32, 39, 47)] ## Columnas de ceros (son realmente encabezados de categorías)
+dt <- dt[, -c(42:44)] ## Total de endeudamiento con capital e intereses
 ```
-
 
 4. Visualización de los datos: El analisis de los datos puede agilizarse gracias a la visualización de los mismos.
-4.1. Primero veamos todas las correlaciones:
+4.1. Primero veamos todas las correlaciones de las variables entre sí, para luego pasar a ver la correlación con la variable dependiente: endeudamiento total.
 
-```{r}
-library(corrplot)
-corrplot(cor(dt2), method = "number")
-```
-
-Encontramos que las correlaciones que se presentan son entre usar las tarjetas de crédito para pagar compras y usarlas para pagar cuotas de un crédito, utilizar las compraventas como medio y hacer abonos a esta ... este son el tipo de correlaciones apreciables.
-
-4.2. Ahora revisemos las correlaciones de cada variable con la variable de salida, dependiente o "y"
-
-```{r}
-cor(dt2)[1:19, 20]
-```
-
-O visualmente
 
 ```{r}
 library(qgraph)
-qgraph(cor(dt2), shape="circle", posCol="darkgreen", negCol="darkred", layout="groups", vsize=8)
+qgraph(cor(dt), shape="circle", posCol="darkgreen", negCol="darkred", layout="groups", vsize=8)
 ```
 
-No hay correlaciones significativas.
+Todas las correlaciones son positivas: a primera vista parece que las personas mientras más endeudadas, más pagan, más deben y a más cŕeditos recurren a un mayor número de cuotas.
+
+Tenemos:
+P2633 con P2548: Los que tienen prestamos con compraventas tienden a tenerlos con los "gota a gota"
+P2633 con P2734: Los que tienen prestamos con compraventas tienden a tener creditos educativos.
+P2633 con P2695: Los que tiene préstamos con compraventas tienden a tener créditos con Cajas de compensación
+P2734 con P2692: Los que tienen crédito educativo tienden a tener "fiado" en la tienda.
+P2734 con P2633: Los que tienen crédito educativo tienden a tener "gota a gota".
+P2734 con P260: Los que tienen crédito educativo tienden a tener préstamos de libre inversión.
+P2734 con P2548: Los que tienen crédito educativo tienden a tener préstamos con compraventas.
+```{r}
+corr <- as.data.frame(cor(dt)[, length(dt)])
+names(corr) <- "coefcorr"
+corr
+```
+
+Las variables tiene correlaciones fuertes entre sí, pero no con la variable dependiente
 
 4.3. Aventuremos la construcción de un modelo con regresiones lineales
 ```{r}
-model <- lm(P352_4 ~., data = dt2)
+model <- lm(P2736_1 ~., data = dt)
 summary(model)
 ```
 
 Entonces intentemos un nuevo modelo con las variables que se mostraron significativas, las marcadas con asteriscos
 
 ```{r}
-dt2$P353 <- as.factor(dt2$P353)
-dt2$P377 <- as.factor(dt2$P377)
-dt2$P379 <- as.factor(dt2$P379)
-
-model <- lm(P352_4 ~ P2978 + P353 + P377 + P379, data = dt2)
+model <- lm(P2736_1 ~ P2548 + P2595 + P2602 + P2623_2 + P2630 + P2695 + P2731, data = dt)
 summary(model)
 ```
+
+Es un modelo que en tanto que modelo está lejos de ser bueno, dado que los datos no tienen una distribución normal. Sin embargo, en tanto que análisis exploratorio nos permite identificar variables sobre las cuales se debe hacer un estudio para verificar su relevancia en el estado total de endeudamiento.
+
+Es así que de 51 variables nos quedamos con 7, por ahora: 
+- P2548: ¿tiene cŕeditos con compraventas?
+- P2595: ¿sabe en cuántos meses termina de pagar estos créditos con compraventas?
+- 2602: ¿tiene otros préstamos bancarios de libre inversión?
+- P2623_2: ¿monto de los intereses de los créditos de libre inversión? que son altamente dependientes del capital adeudado, pero también de las tasas de interés.
+- P2630: ¿sabe en cuántos meses terminar de pagar los préstamos de libre inversión?
+- P2695: ¿tiene crédito con cajas de compensación, cooperativas o fondos de empleados?
+- P2731:  ¿Sabe en cuántos meses terminará de pagar estos préstamos con fondos de empleados? 
