@@ -61,13 +61,14 @@ qgraph(cor(dt), shape="circle", posCol="darkgreen", negCol="darkred", layout="gr
 Todas las correlaciones son positivas: a primera vista parece que las personas mientras más endeudadas, más pagan, más deben y a más cŕeditos recurren a un mayor número de cuotas.
 
 Tenemos:
-P2633 con P2548: Los que tienen prestamos con compraventas tienden a tenerlos con los "gota a gota"
-P2633 con P2734: Los que tienen prestamos con compraventas tienden a tener creditos educativos.
-P2633 con P2695: Los que tiene préstamos con compraventas tienden a tener créditos con Cajas de compensación Familiar.
-P2734 con P2692: Los que tienen crédito educativo tienden a tener "fiado" en la tienda.
-P2734 con P2633: Los que tienen crédito educativo tienden a tener "gota a gota".
-P2734 con P260: Los que tienen crédito educativo tienden a tener préstamos de libre inversión.
-P2734 con P2548: Los que tienen crédito educativo tienden a tener préstamos con compraventas.
+
+- P2633 con P2548: Los que tienen prestamos con compraventas tienden a tenerlos con los "gota a gota".
+- P2633 con P2734: Los que tienen prestamos con compraventas tienden a tener creditos educativos.
+- P2633 con P2695: Los que tiene préstamos con compraventas tienden a tener créditos con Cajas de compensación Familiar.
+- P2734 con P2692: Los que tienen crédito educativo tienden a tener "fiado" en la tienda.
+- P2734 con P2633: Los que tienen crédito educativo tienden a tener "gota a gota".
+- P2734 con P260: Los que tienen crédito educativo tienden a tener préstamos de libre inversión.
+- P2734 con P2548: Los que tienen crédito educativo tienden a tener préstamos con compraventas.
 
 4.2. Correlaciones de las variables con la variable definida como dependiente:
 
@@ -95,6 +96,7 @@ summary(model)
 Es un modelo que en tanto que modelo está lejos de ser bueno, dado que los datos no tienen una distribución normal. Sin embargo, en tanto que análisis exploratorio nos permite identificar variables sobre las cuales se debe hacer un estudio para verificar su relevancia en el estado total de endeudamiento.
 
 Es así que de 51 variables nos quedamos con 7, por ahora: 
+
 - P2548: ¿tiene cŕeditos con compraventas?
 - P2595: ¿sabe en cuántos meses termina de pagar estos créditos con compraventas?
 - 2602: ¿tiene otros préstamos bancarios de libre inversión?
