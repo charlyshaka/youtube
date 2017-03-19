@@ -49,9 +49,9 @@ dt <- dt[, -c(2, 9, 18, 25, 32, 39, 47)] ## Columnas de ceros (son realmente enc
 dt <- dt[, -c(42:44)] ## Total de endeudamiento con capital e intereses
 ```
 
-4. Visualización de los datos: El analisis de los datos puede agilizarse gracias a la visualización de los mismos.
-4.1. Primero veamos todas las correlaciones de las variables entre sí, para luego pasar a ver la correlación con la variable dependiente: endeudamiento total.
+4. Visualización de los datos: El analisis de los datos puede agilizarse gracias a la visualización de los mismos. Primero veamos todas las correlaciones de las variables entre sí, para luego pasar a ver la correlación con la variable que hemos definido como dependiente: endeudamiento total.
 
+4.1. Correlaciones de todas las variables entre sí:
 
 ```{r}
 library(qgraph)
@@ -63,18 +63,21 @@ Todas las correlaciones son positivas: a primera vista parece que las personas m
 Tenemos:
 P2633 con P2548: Los que tienen prestamos con compraventas tienden a tenerlos con los "gota a gota"
 P2633 con P2734: Los que tienen prestamos con compraventas tienden a tener creditos educativos.
-P2633 con P2695: Los que tiene préstamos con compraventas tienden a tener créditos con Cajas de compensación
+P2633 con P2695: Los que tiene préstamos con compraventas tienden a tener créditos con Cajas de compensación Familiar.
 P2734 con P2692: Los que tienen crédito educativo tienden a tener "fiado" en la tienda.
 P2734 con P2633: Los que tienen crédito educativo tienden a tener "gota a gota".
 P2734 con P260: Los que tienen crédito educativo tienden a tener préstamos de libre inversión.
 P2734 con P2548: Los que tienen crédito educativo tienden a tener préstamos con compraventas.
+
+4.2. Correlaciones de las variables con la variable definida como dependiente:
+
 ```{r}
 corr <- as.data.frame(cor(dt)[, length(dt)])
 names(corr) <- "coefcorr"
 corr
 ```
 
-Las variables tiene correlaciones fuertes entre sí, pero no con la variable dependiente
+Algunas variables tiene correlaciones fuertes entre sí, pero no con la variable dependiente
 
 4.3. Aventuremos la construcción de un modelo con regresiones lineales
 ```{r}
@@ -101,6 +104,7 @@ Es así que de 51 variables nos quedamos con 7, por ahora:
 - P2731:  ¿Sabe en cuántos meses terminará de pagar estos préstamos con fondos de empleados? 
 
 
-Hya variables que podríamos cambiar por otras, e ir probando cómo se efecta la precisión del modelo. Por ejemplo, la P2633_2 por otras de las de la categoría.
+Hya variables que podríamos cambiar por otras, e ir probando cómo se efecta la precisión del modelo. Por ejemplo, la P2633_2 por otras de las de la categoría. Además, podríamos usar variables categóricas como factores y experimentar cómo se afecta el modelo.
 
-En general, parece que desconocer los plazos y términos o prestarles poca atención es un factor importante que conduce a mayores niveles de endeudamiento o los altos niveles de endeudamiento conducen a que las personas descuiden esos aspectos, por irrealizables, por frustración, por ser algo de lo que prefieren no saber...
+En general, interpretando los datos hasta aquí, pareciera que desconocer los plazos y términos o prestarles poca atención es un factor importante que conduce a mayores niveles de endeudamiento o los altos niveles de endeudamiento conducen a que las personas descuiden esos aspectos, por irrealizables, por frustración, por ser algo de lo que prefieren no saber.
+No sobra decir que las relaciones de correlación no implican en sí mismas una relación de causalidad: la causalidad es algo que debemos investigar y soportar.
