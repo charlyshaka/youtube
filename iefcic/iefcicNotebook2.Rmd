@@ -96,6 +96,11 @@ Es así que de 51 variables nos quedamos con 7, por ahora:
 - P2595: ¿sabe en cuántos meses termina de pagar estos créditos con compraventas?
 - 2602: ¿tiene otros préstamos bancarios de libre inversión?
 - P2623_2: ¿monto de los intereses de los créditos de libre inversión? que son altamente dependientes del capital adeudado, pero también de las tasas de interés.
-- P2630: ¿sabe en cuántos meses terminar de pagar los préstamos de libre inversión?
+- P2630: ¿sabe en cuántos meses termina de pagar los préstamos de libre inversión?
 - P2695: ¿tiene crédito con cajas de compensación, cooperativas o fondos de empleados?
 - P2731:  ¿Sabe en cuántos meses terminará de pagar estos préstamos con fondos de empleados? 
+
+
+Hya variables que podríamos cambiar por otras, e ir probando cómo se efecta la precisión del modelo. Por ejemplo, la P2633_2 por otras de las de la categoría.
+
+En general, parece que desconocer los plazos y términos o prestarles poca atención es un factor importante que conduce a mayores niveles de endeudamiento o los altos niveles de endeudamiento conducen a que las personas descuiden esos aspectos, por irrealizables, por frustración, por ser algo de lo que prefieren no saber...
