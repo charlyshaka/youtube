@@ -47,33 +47,36 @@ limpia <- function(x){
 dt <- as.data.frame(limpia(ddeudanohipotecaria))
 dt <- dt[, -c(2, 9, 18, 25, 32, 39, 47)] ## Columnas de ceros (son realmente encabezados de categorías)
 dt <- dt[, -c(42:44)] ## Total de endeudamiento con capital e intereses
+dt <- dt[dt$P2540 != 0,] ## Dejemos por fuera de la muestra a quienes no tienen tarjeta de crédito
+cols <- c("P2540", "P2548", "P2584", "P2595", "P2602", "P2630", "P2633", "P2638", "P2692", "P2694", 
+          "P2695", "P2731", "P2734")
+dt[cols] <- lapply(dt[cols], factor)
+l <- as.logical(lapply(dt, class)=="numeric")
+dtCorr <- dt[, l]
 ```
 
 4. Visualización de los datos: El analisis de los datos puede agilizarse gracias a la visualización de los mismos. Primero veamos todas las correlaciones de las variables entre sí, para luego pasar a ver la correlación con la variable que hemos definido como dependiente: endeudamiento total.
 
-4.1. Correlaciones de todas las variables entre sí:
+4.1. Correlaciones de todas las variables que no son factor entre sí:
 
 ```{r}
 library(qgraph)
-qgraph(cor(dt), shape="circle", posCol="darkgreen", negCol="darkred", layout="groups", vsize=8)
+qgraph(cor(dtCorr), shape="circle", posCol="darkgreen", negCol="darkred", layout="spring", vsize=8)
 ```
 
-Todas las correlaciones son positivas: a primera vista parece que las personas mientras más endeudadas, más pagan, más deben y a más cŕeditos recurren a un mayor número de cuotas.
+Tenemos: En primera instancia el hecho de que casi todas las correlaciones son positivas; lo cual parece indicar que mientras más endeudado se está más se tiende a endeudarse. 
 
-Tenemos:
+Sin embargo hay variables que tienen correlaciones negativas, si bien poco significativas: la P2735 que se refiere al número total de hogares en la vivienda con las P2623_; a mayor número de hogares, el endeudamiento en créditos de libre inversión disminuye. La P2560_3 con las P2623_: Cuando aumentan las cuotas de las compraventas, disminuye las de crédito de libre inversión. Como si los créditos de libre inversión se vieran disminuidos cuando aumenta el número de hogares en la vivienda y cuando se recurre a las compraventas. Esto sin que entre el número de hogares en la vivienda y las cuotas en las compraventas haya correlación.
 
-- P2633 con P2548: Los que tienen prestamos con compraventas tienden a tenerlos con los "gota a gota".
-- P2633 con P2734: Los que tienen prestamos con compraventas tienden a tener creditos educativos.
-- P2633 con P2695: Los que tiene préstamos con compraventas tienden a tener créditos con Cajas de compensación Familiar.
-- P2734 con P2692: Los que tienen crédito educativo tienden a tener "fiado" en la tienda.
-- P2734 con P2633: Los que tienen crédito educativo tienden a tener "gota a gota".
-- P2734 con P260: Los que tienen crédito educativo tienden a tener préstamos de libre inversión.
-- P2734 con P2548: Los que tienen crédito educativo tienden a tener préstamos con compraventas.
+También se revela que el capital e intereses de las tarjetas de crédito tiene alta correlación positiva con el capital e intereses de los créditos de libre inversión.
+
+Pero no se revela una variable determinante de la variable dependiente.
 
 4.2. Correlaciones de las variables con la variable definida como dependiente:
 
 ```{r}
-corr <- as.data.frame(cor(dt)[, length(dt)])
+precor <- as.data.frame(cor(dtCorr)) ## guardamos todas las correlaciones
+corr <- as.data.frame(cor(dtCorr)[, ncol(dtCorr)])
 names(corr) <- "coefcorr"
 corr
 ```
@@ -82,20 +85,20 @@ Algunas variables tiene correlaciones fuertes entre sí, pero no con la variable
 
 4.3. Aventuremos la construcción de un modelo con regresiones lineales
 ```{r}
-model <- lm(P2736_1 ~., data = dt)
-summary(model)
+model1 <- lm(P2736_1 ~., data = dt)
+summary(model1)
 ```
 
 Entonces intentemos un nuevo modelo con las variables que se mostraron significativas, las marcadas con asteriscos
 
 ```{r}
-model <- lm(P2736_1 ~ P2548 + P2595 + P2602 + P2623_2 + P2630 + P2695 + P2731, data = dt)
-summary(model)
+model2 <- lm(P2736_1 ~ P2542_2 + P2623_2 + P2630 + P2694 + P2731, data = dt)
+summary(model2)
 ```
 
 Es un modelo que en tanto que modelo está lejos de ser bueno, dado que los datos no tienen una distribución normal. Sin embargo, en tanto que análisis exploratorio nos permite identificar variables sobre las cuales se debe hacer un estudio para verificar su relevancia en el estado total de endeudamiento.
 
-Es así que de 51 variables nos quedamos con 7, por ahora: 
+Es así que de 51 variables nos quedamos con 5, por ahora: 
 
 - P2548: ¿tiene cŕeditos con compraventas?
 - P2595: ¿sabe en cuántos meses termina de pagar estos créditos con compraventas?
@@ -110,3 +113,16 @@ Hya variables que podríamos cambiar por otras, e ir probando cómo se efecta la
 
 En general, interpretando los datos hasta aquí, pareciera que desconocer los plazos y términos o prestarles poca atención es un factor importante que conduce a mayores niveles de endeudamiento o los altos niveles de endeudamiento conducen a que las personas descuiden esos aspectos, por irrealizables, por frustración, por ser algo de lo que prefieren no saber.
 No sobra decir que las relaciones de correlación no implican en sí mismas una relación de causalidad: la causalidad es algo que debemos investigar y soportar.
+
+```{r}
+library("doMC")
+library("randomForest")
+registerDoMC(3) #number of cores on the machine
+darkAndScaryForest <- foreach(y=seq(10), .combine=combine ) %dopar% {
+   set.seed(y) # not really needed
+   model3 <- randomForest(P2736_1 ~ P2542_2 + P2623_2 + P2630 + P2694 + P2731, data = dt,
+                      ntree=50, norm.votes=FALSE)
+}
+```
+
+Podría hacerse un rf con todas, seleccionar las de mayor importancia y correr un modelo más sencillo en segunda instancia. en todo esto me faltó separar el training and test sets.
